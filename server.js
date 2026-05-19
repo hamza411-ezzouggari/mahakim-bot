@@ -29,33 +29,40 @@ app.post("/check-case", async (req, res) => {
     const page = await browser.newPage();
 
     await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000
+      waitUntil: "networkidle",
+      timeout: 60000
     });
 
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(8000);
+
+    await page.waitForSelector("input", {
+      timeout: 15000
+    });
 
     const inputs = await page.locator("input").count();
 
     await page.locator("input").first().fill(String(full_case_number));
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
-    const beforeClick = await page.locator("body").innerText();
+    await page.getByText("بحث").last().click();
+
+    await page.waitForTimeout(6000);
+
+    const resultText = await page.locator("body").innerText();
 
     return res.json({
       success: true,
-      step: "filled_only_no_click",
+      step: "search_clicked",
       inputs_found: inputs,
       full_case_number,
-      text_preview: beforeClick.slice(0, 1500)
+      result_preview: resultText.slice(0, 3000)
     });
 
   } catch (error) {
     return res.status(200).json({
       success: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   } finally {
     if (browser) await browser.close();
