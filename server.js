@@ -8,8 +8,9 @@ app.post("/check-case", async (req, res) => {
   const { file_number, file_code, year, court } = req.body;
 
   const browser = await chromium.launch({
-    headless: true
-  });
+  headless: true,
+  args: ["--no-sandbox", "--disable-setuid-sandbox"]
+});
 
   const page = await browser.newPage();
 
