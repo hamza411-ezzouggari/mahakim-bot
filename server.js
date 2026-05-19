@@ -36,7 +36,7 @@ app.post("/check-case", async (req, res) => {
       timeout: 60000
     }).catch(() => {});
 
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(10000);
 
     const inputs = await page.locator("input").count();
 
