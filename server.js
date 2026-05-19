@@ -1,33 +1,42 @@
 const express = require("express");
+const { chromium } = require("playwright");
 
 const app = express();
-
 app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("Mahakim Bot Running");
-});
 
 app.post("/check-case", async (req, res) => {
   const { file_number, file_code, year, court } = req.body;
 
-  console.log("Received:", {
-    file_number,
-    file_code,
-    year,
-    court
+  const browser = await chromium.launch({
+    headless: true
   });
 
-  // غادي نزيدو Playwright الحقيقي فالمرحلة الجاية
-  return res.json({
-    success: true,
-    received: {
-      file_number,
-      file_code,
-      year,
-      court
-    }
-  });
+  const page = await browser.newPage();
+
+  try {
+    await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi");
+
+    await page.waitForTimeout(5000);
+
+    return res.json({
+      success: true,
+      message: "Mahakim opened",
+      data: {
+        file_number,
+        file_code,
+        year,
+        court
+      }
+    });
+
+  } catch (e) {
+    return res.json({
+      success: false,
+      error: e.message
+    });
+  } finally {
+    await browser.close();
+  }
 });
 
 const PORT = process.env.PORT || 3000;
