@@ -29,19 +29,19 @@ app.post("/check-case", async (req, res) => {
     });
 
     const page = await browser.newPage();
-    page.setDefaultTimeout(10000);
+    page.setDefaultTimeout(8000);
 
     await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi", {
       waitUntil: "domcontentloaded",
-      timeout: 120000
+      timeout: 60000
     }).catch(() => {});
 
-    await page.waitForTimeout(10000);
+    await page.waitForTimeout(5000);
 
     const inputs = await page.locator("input").count();
 
     if (inputs === 0) {
-      const bodyText = await page.locator("body").innerText();
+      const bodyText = await page.locator("body").innerText().catch(() => "");
       return res.json({
         success: false,
         error: "No inputs found",
@@ -50,23 +50,23 @@ app.post("/check-case", async (req, res) => {
     }
 
     await page.locator("input").first().fill(String(full_case_number));
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     let steps = ["filled_case_number"];
 
     if (appeal_court) {
-      await page.locator("text=اختيار محكمة الاستئناف").click().catch(e => {
-        steps.push("appeal_dropdown_click_failed: " + e.message);
+      await page.getByText("اختيار محكمة الاستئناف").click().catch(() => {
+        steps.push("appeal_dropdown_click_failed");
       });
 
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
 
-      await page.locator(`text=${appeal_court}`).first().click().catch(e => {
-        steps.push("appeal_select_failed: " + e.message);
+      await page.getByText(String(appeal_court), { exact: true }).click().catch(() => {
+        steps.push("appeal_select_failed");
       });
 
       steps.push("appeal_attempt_done");
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1000);
     }
 
     const shouldSearchPrimary =
@@ -74,41 +74,46 @@ app.post("/check-case", async (req, res) => {
       String(search_primary).toLowerCase() === "true";
 
     if (shouldSearchPrimary) {
-      await page.locator("text=هل تريد البحث بالمحاكم الابتدائية").click().catch(e => {
-        steps.push("primary_checkbox_click_failed: " + e.message);
+      await page.getByText("هل تريد البحث بالمحاكم الابتدائية").click().catch(() => {
+        steps.push("primary_checkbox_click_failed");
       });
 
       steps.push("primary_checkbox_attempt_done");
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1000);
 
       if (primary_court) {
-        await page.locator("text=اختيار المحكمة الابتدائية").click().catch(e => {
-          steps.push("primary_dropdown_click_failed: " + e.message);
+        await page.getByText("اختيار المحكمة الابتدائية").click().catch(() => {
+          steps.push("primary_dropdown_click_failed");
         });
 
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(1000);
 
-        await page.locator(`text=${primary_court}`).first().click().catch(e => {
-          steps.push("primary_select_failed: " + e.message);
+        await page.getByText(String(primary_court), { exact: true }).click().catch(() => {
+          steps.push("primary_select_failed");
         });
 
         steps.push("primary_attempt_done");
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(1000);
       }
     }
 
-    const bodyText = await page.locator("body").innerText();
+    await page.getByText("بحث").last().click().catch(() => {
+      steps.push("search_click_failed");
+    });
+
+    await page.waitForTimeout(3000);
+
+    const result = await page.locator("body").innerText().catch(() => "");
 
     return res.json({
       success: true,
-      mode: "debug_no_search_click",
+      steps,
       inputs_found: inputs,
       full_case_number,
       appeal_court,
       search_primary,
       primary_court,
-      steps,
-      text_preview: bodyText.slice(0, 3000)
+      result_preview: result.slice(0, 3000)
     });
 
   } catch (error) {
@@ -117,7 +122,7 @@ app.post("/check-case", async (req, res) => {
       error: error.message
     });
   } finally {
-    if (browser) await browser.close();
+    if (browser) await browser.close().catch(() => {});
   }
 });
 
