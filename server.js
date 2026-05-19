@@ -28,10 +28,10 @@ app.post("/check-case", async (req, res) => {
 
     const page = await browser.newPage();
 
-    await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi", {
-      waitUntil: "networkidle",
-      timeout: 60000
-    });
+await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi", {
+  waitUntil: "domcontentloaded",
+  timeout: 60000
+});
 
     await page.waitForTimeout(8000);
 
