@@ -1,52 +1,44 @@
-const express = require("express");
-const { chromium } = require("playwright");
-
-const app = express();
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("Mahakim Bot Running OK");
-});
-
 app.post("/check-case", async (req, res) => {
   let browser;
 
   try {
+    const { full_case_number } = req.body;
+
     browser = await chromium.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+      args: ["--no-sandbox"]
     });
 
     const page = await browser.newPage();
 
-    await page.goto("https://www.mahakim.ma/#/suivi/dossier-suivi", {
-      waitUntil: "networkidle",
-      timeout: 60000
-    });
+    await page.goto(
+      "https://www.mahakim.ma/#/suivi/dossier-suivi",
+      { waitUntil: "networkidle" }
+    );
 
     await page.waitForTimeout(5000);
 
-    const pageText = await page.locator("body").innerText();
+    // دخل الرقم
+    await page.locator('input').first().fill(full_case_number);
 
-    return res.json({
+    // ضغط بحث
+    await page.getByText("بحث").click();
+
+    await page.waitForTimeout(5000);
+
+    const result = await page.locator("body").innerText();
+
+    res.json({
       success: true,
-      message: "Mahakim page opened",
-      received: req.body,
-      page_text_preview: pageText.slice(0, 1000)
+      result: result.slice(0,2000)
     });
 
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message
+  } catch(error) {
+    res.status(500).json({
+      success:false,
+      error:error.message
     });
   } finally {
-    if (browser) await browser.close();
+    if(browser) await browser.close();
   }
-});
-
-const PORT = process.env.PORT || 8080;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on ${PORT}`);
 });
