@@ -50,7 +50,7 @@ app.post("/check-case", async (req, res) => {
     }
 
     await page.locator("input").first().fill(String(full_case_number));
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(10000);
 
     let steps = ["filled_case_number"];
 
@@ -59,7 +59,7 @@ app.post("/check-case", async (req, res) => {
         steps.push("appeal_dropdown_click_failed");
       });
 
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(10000);
 
       await page.getByText(String(appeal_court), { exact: true }).click().catch(() => {
         steps.push("appeal_select_failed");
